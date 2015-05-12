@@ -10,3 +10,4 @@ example-sqlite3.db
 gorun_settings.py
 .tox
 django_mongokit.egg-info/
+*.ropeproject*

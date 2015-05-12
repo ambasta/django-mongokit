@@ -1,6 +1,7 @@
 """
 MongoKit (MongoDB) backend for Django.
 """
+import sys
 
 from mongokit import Connection
 
@@ -16,6 +17,9 @@ from django.db.backends.creation import BaseDatabaseCreation
 from django.conf import settings
 
 TEST_DATABASE_PREFIX = 'test_'
+
+if sys.version_info >= (3, 0, 0):
+    unicode = str
 
 
 class UnsupportedConnectionOperation(Exception):
@@ -71,8 +75,10 @@ class DatabaseCreation(BaseDatabaseCreation):
             test_database_name = (TEST_DATABASE_PREFIX +
                                   self.connection.settings_dict['NAME'])
         elif 'DATABASE_NAME' in self.connection.settings_dict:
-            if (self.connection.settings_dict['DATABASE_NAME']
-                .startswith(TEST_DATABASE_PREFIX)):
+            if (
+                    self.connection.settings_dict[
+                        'DATABASE_NAME'].startswith(
+                        TEST_DATABASE_PREFIX)):
                 # already been set up
                 # must be because this is called from a setUp() instead of
                 # something formal.
@@ -80,8 +86,9 @@ class DatabaseCreation(BaseDatabaseCreation):
                 test_database_name = (self.connection
                                       .settings_dict['DATABASE_NAME'])
             else:
-                test_database_name = TEST_DATABASE_PREFIX + \
-                  self.connection.settings_dict['DATABASE_NAME']
+                test_database_name = (
+                    TEST_DATABASE_PREFIX +
+                    self.connection.settings_dict['DATABASE_NAME'])
         else:
             raise ValueError("Name for test database not defined")
 
@@ -110,7 +117,8 @@ class DatabaseCreation(BaseDatabaseCreation):
         database already exists. Returns the name of the test database created.
         """
         if verbosity >= 1:
-            print "Destroying test database '%s'..." % self.connection.alias
+            print("Destroying test database '{}'...".format(
+                self.connection.alias))
         if 'DATABASE_NAME' in self.connection.settings_dict:
             # Django <1.2
             test_database_name = settings.MONGO_DATABASE_NAME
@@ -145,6 +153,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     def supports_transactions(self):
         return False
 
+
 class DatabaseWrapper(BaseDatabaseWrapper):
     operators = {}
     _commit = ignore
@@ -166,6 +175,9 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             kwargs['port'] = int(settings_dict['PORT'])
         if 'OPTIONS' in settings_dict:
             kwargs.update(settings_dict['OPTIONS'])
+        if settings_dict['USER']:
+            kwargs['user'] = settings_dict['USER']
+            kwargs['pass'] = settings_dict['PASSWORD']
         self.connection = ConnectionWrapper(**kwargs)
 
         try:
