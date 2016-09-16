@@ -2,6 +2,7 @@
 MongoKit (MongoDB) backend for Django.
 """
 import sys
+import urllib
 
 from mongokit import Connection
 
@@ -169,16 +170,20 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             **kwargs
         )
 
-        if settings_dict['HOST']:
-            kwargs['host'] = settings_dict['HOST']
-        if settings_dict['PORT']:
-            kwargs['port'] = int(settings_dict['PORT'])
-        if 'OPTIONS' in settings_dict:
-            kwargs.update(settings_dict['OPTIONS'])
-        if settings_dict['USER']:
-            kwargs['user'] = settings_dict['USER']
-            kwargs['pass'] = settings_dict['PASSWORD']
-        self.connection = ConnectionWrapper(**kwargs)
+
+        host = settings_dict.get('HOST', '127.0.0.1')
+        port = settings_dict.get('PORT', '27017')
+
+        user = settings_dict.get('USER', None)
+        pswd = settings_dict.get('PASSWORD', None)
+
+        uri = 'mongodb://{}:{}'.format(host, port)
+
+        if user and pswd:
+            uri = 'mongodb://{}:{}@{}:{}'.format(
+                    user, urllib.quote_plus(pswd), host, port)
+
+        self.connection = ConnectionWrapper(uri, **kwargs)
 
         try:
             self.features = DatabaseFeatures(self.connection)
